@@ -29,22 +29,17 @@ while ($row = $colors_handle->fetch_assoc()) {
 }
 
 //TODO: collect and sanitize the current inputs from GET data
-if (isset($_GET['year'])) {
-    $year = $_GET['year'];
-}
-if (isset($_GET['manufacturer'])) {
-    $manufacturer = $_GET['manufacturer'];
-}
-if (isset($_GET['color'])) {
-    $color = $_GET['color'];
-}
-//$manufacturer = "";
-//$color = "";
+$year = (isset($_GET['year'])) ? intval($_GET['year']) : "";
+$manufacturer = (isset($_GET['manufacturer'])) ? intval($_GET['manufacturer']) : "";
+$color = (isset($_GET['color'])) ? intval($_GET['color']) : "";
 
-//$year = $_GET["year"];
-//$manufacturer = $_GET["manufacturer"];
-//$color = $_GET["color"]
+$error = null;
+if (!$year || !$manufacturer || !$color) {
+	$error = 'All fields are required!';
+}
 
+
+//TODO: connect to database, make a query, collect results, save it to $results array as objects
 $results_handle = $mysqli->prepare("select
 	manufacturers.title as manufacturer,
 	models.title as model,
@@ -69,7 +64,6 @@ order by
 $results_handle->bind_param("iii", $manufacturer, $color, $year);
 $results_handle->execute();
 
-//TODO: connect to database, make a query, collect results, save it to $results array as objects
 $results = array();
 $result = $results_handle->get_result();
 while ($row = $result->fetch_assoc()) {
@@ -77,14 +71,24 @@ while ($row = $result->fetch_assoc()) {
 }
   $mysqli -> close();
 
-//while ($row = $results_handle->fetch_assoc()) {
-//    $results[] = $row;
-//}
-
 //TODO: complete the view file
 require("view.php");
 
 
 require("../task2/logger.php");
 $logger = new Logger("/Applications/XAMPP/logs/out.txt");
-$logger->log("OK");
+if (isset($error)) {
+	$logger->log("Error: " . $error);
+} else if (
+	!isset($year) ||
+	!isset($manufacturer) ||
+	!isset($color)
+) {
+	$logger->log("Error: No filters applied");
+} else if (sizeof($results) == 0) {
+	$logger->log("Error: No results found");
+} else {
+	$logger->log("OK");
+}
+
+?>
